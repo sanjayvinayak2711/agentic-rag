@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  agentic-rag:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./ui:/app/ui
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - CHROMA_PERSIST_DIRECTORY=/app/data/chroma
+      - EMBEDDING_MODEL=all-MiniLM-L6-v2
+      - DEBUG=true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add Redis for caching (future enhancement)
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   restart: unless-stopped
+
+volumes:
+  # redis_data:
+  chroma_data:
+    driver: local

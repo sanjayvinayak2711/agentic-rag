@@ -1,0 +1,13 @@
+This is a sample document about artificial intelligence and machine learning.
+
+Artificial Intelligence (AI) is a branch of computer science that aims to create intelligent machines that can perform tasks that typically require human intelligence.
+
+Machine Learning (ML) is a subset of AI that focuses on the development of algorithms and statistical models that enable computer systems to improve their performance on a specific task through experience.
+
+Key concepts in AI and ML include:
+- Neural Networks: Computing systems inspired by biological neural networks
+- Deep Learning: A subset of machine learning using artificial neural networks
+- Natural Language Processing: The ability of computers to understand and process human language
+- Computer Vision: The ability of computers to interpret and understand visual information
+
+Applications of AI and ML are widespread across industries including healthcare, finance, transportation, and entertainment.

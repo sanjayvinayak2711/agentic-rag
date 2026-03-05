@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic RAG - Smart Document Chat</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Professional Top Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <div class="app-title">
+                    <i class="fas fa-brain"></i>
+                    <span>Agentic RAG</span>
+                </div>
+            </div>
+            <div class="header-center">
+                <div class="model-info-header">
+                    <span class="model-name" id="header-model-name">AGENTIC RAG</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="performance-metrics">
+                    <div class="metric-item">
+                        <span class="metric-label">Latency</span>
+                        <span class="metric-value" id="metric-latency">1.2s</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Accuracy</span>
+                        <span class="metric-value" id="metric-accuracy">94%</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Tokens</span>
+                        <span class="metric-value" id="metric-tokens">512</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn-top">
+                    <i class="fas fa-plus"></i> New chat
+                </button>
+                <button class="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <!-- Agent Selection -->
+            <div class="agent-selection">
+                <div class="agent-header">
+                    <i class="fas fa-robot"></i>
+                    <span>Choose Agent</span>
+                </div>
+                <div class="agent-options">
+                    <button class="agent-btn active" data-agent="default">
+                        <div class="agent-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="agent-info">
+                            <div class="agent-name">General Agent</div>
+                            <div class="agent-desc">General purpose assistant</div>
+                        </div>
+                    </button>
+                    <button class="agent-btn" data-agent="research">
+                        <div class="agent-icon">
+                            <i class="fas fa-microscope"></i>
+                        </div>
+                        <div class="agent-info">
+                            <div class="agent-name">Research Agent</div>
+                            <div class="agent-desc">Deep analysis & insights</div>
+                        </div>
+                    </button>
+                    <button class="agent-btn" data-agent="code">
+                        <div class="agent-icon">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <div class="agent-info">
+                            <div class="agent-name">Code Agent</div>
+                            <div class="agent-desc">Programming & development</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Performance Graph -->
+            <div class="performance-graph">
+                <div class="graph-header">
+                    <i class="fas fa-chart-line"></i>
+                    Performance Metrics
+                </div>
+                <div class="graph-container">
+                    <canvas id="performance-canvas" width="200" height="80"></canvas>
+                </div>
+                <div class="graph-legend">
+                    <div class="legend-item">
+                        <div class="legend-dot accuracy"></div>
+                        <span>Accuracy</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot speed"></div>
+                        <span>Speed</span>
+                    </div>
+                </div>
+            </div>
+            
+                        
+                        
+            <!-- Chat History - Right Side -->
+            <div class="chat-history">
+            </div>
+            
+            <div class="sidebar-footer">
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="welcome-message">
+                        <div class="welcome-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h1>How can I help you today?</h1>
+                        <p>Upload documents and ask me anything about them</p>
+                    </div>
+                </div>
+                
+                <div class="chat-input-container">
+                    <div class="input-wrapper">
+                        <label class="input-btn attach-btn" title="Attach file">
+                            <i class="fas fa-paperclip"></i>
+                            <input type="file" id="file-upload" hidden>
+                        </label>
+                        
+                        <textarea 
+                            id="chat-input" 
+                            placeholder="Ask anything about your documents..."
+                            rows="1"
+                        ></textarea>
+                        
+                        <button class="input-btn send-btn" title="Send" id="send-btn">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/main.js"></script>
+</body>
+</html>
