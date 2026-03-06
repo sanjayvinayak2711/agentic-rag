@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from .routes.query import router as query_router
 from .config import settings
 import os
+import webbrowser
+import threading
+import time
 
 
 # Create FastAPI app
@@ -14,19 +17,8 @@ app = FastAPI(
 )
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize models and resources on application startup."""
-    print("Starting up application...")
-    
-    # Pre-load embedding model to avoid slow first requests
-    try:
-        from .utils.embeddings import get_embedding_model
-        print("Pre-loading embedding model...")
-        model = get_embedding_model(settings.embedding_model)
-        print("Embedding model pre-loaded successfully")
-    except Exception as e:
-        print(f"Warning: Could not pre-load embedding model: {e}")
+# Include static files
+app.mount("/static", StaticFiles(directory=settings.static_files_dir), name="static")
 
 
 # Add CORS middleware
@@ -38,28 +30,53 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include API routes
-app.include_router(query_router, prefix="/api", tags=["query"])
 
-# Mount static files for UI
-if os.path.exists(settings.static_files_dir):
-    app.mount("/static", StaticFiles(directory=settings.static_files_dir), name="static")
+# Include routers
+app.include_router(query_router, prefix="/api")
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize everything and open browser automatically"""
+    print(" Starting Agentic RAG...")
     
-    # Serve index.html at root
-    @app.get("/", include_in_schema=False)
-    async def read_index():
-        from fastapi.responses import FileResponse
-        return FileResponse(os.path.join(settings.static_files_dir, "index.html"))
-else:
-    @app.get("/")
-    async def root():
-        """Root endpoint that serves the UI."""
-        return {
-            "message": f"Welcome to {settings.app_name}",
-            "version": settings.app_version,
-            "docs": "/docs",
-            "ui": f"/static/index.html" if os.path.exists(settings.static_files_dir) else None
-        }
+    # Initialize the RAG agent
+    from .services.agent import RAGAgent
+    agent = RAGAgent()
+    
+    # Initialize database if docs directory exists
+    docs_dir = os.path.join(os.path.dirname(__file__), '..', 'data', 'docs')
+    if os.path.exists(docs_dir):
+        doc_count = agent.initialize_database(str(docs_dir))
+        print(f" Database initialized with {doc_count} documents")
+    
+    # Open browser after a short delay
+    def open_browser():
+        time.sleep(2)  # Wait 2 seconds for server to fully start
+        try:
+            webbrowser.open('http://localhost:8000')
+            print(" Browser opened: http://localhost:8000")
+        except Exception as e:
+            print(f" Could not open browser: {e}")
+    
+    # Start browser in a separate thread
+    browser_thread = threading.Thread(target=open_browser, daemon=True)
+    browser_thread.start()
+    
+    print(" Agentic RAG is ready!")
+    print(" Frontend: http://localhost:8000")
+    print(" Backend: Running on port 8000")
+
+
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {
+        "message": "Agentic RAG API is running",
+        "version": settings.app_version,
+        "frontend": "http://localhost:8000",
+        "status": "ready"
+    }
 
 
 @app.get("/health")
@@ -70,6 +87,12 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+    
+    print("=" * 50)
+    print(" Agentic RAG - Single File Startup")
+    print("=" * 50)
+    
+    # Run the server
     uvicorn.run(
         "app.main:app",
         host=settings.host,

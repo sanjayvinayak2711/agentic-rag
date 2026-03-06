@@ -1,26 +1,35 @@
 @echo off
-title Agentic RAG - Single Click Start
+title Agentic RAG - Single File Startup
 echo.
 echo ========================================
-echo    Starting Agentic RAG Project
+echo    Starting Agentic RAG - SINGLE FILE
 echo ========================================
 echo.
-echo [1/4] Checking requirements...
-python -c "import os; print('✅ OK' if os.path.exists('app/main.py') and os.path.exists('ui/index.html') else '❌ Missing files')"
-echo.
-echo [2/4] Installing dependencies...
-python -m pip install -r requirements.txt
-echo.
-echo [3/4] Starting backend server...
-start /B python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
-echo.
-echo [4/4] Opening frontend...
-timeout /t 3 >nul
-start http://localhost:8000
+echo [1/4] Checking OS and launching...
+if exist "C:\Windows\System32\cmd.exe" (
+    echo [2/4] Windows detected - Using batch file...
+    call :run_batch
+) else (
+    echo [2/4] Linux/Mac detected - Using shell script...
+    call :run_shell
+)
+goto :end
+
+:run_batch
+echo [3/4] Launching single file...
+python app/main.py
+goto :end
+
+:run_shell
+echo [3/4] Launching single file...
+python3 app/main.py
+goto :end
+
+:end
 echo.
 echo ========================================
-echo    Agentic RAG is now running!
+echo    READY INSTANTLY!
 echo    Frontend: http://localhost:8000
-echo    Press Ctrl+C to stop
+echo    Backend: Running in single process
 echo ========================================
 pause
