@@ -1,138 +1,82 @@
-# Agentic RAG - Document Q&A System
+# 🎯 Agentic RAG
 
-A powerful Retrieval-Augmented Generation (RAG) system that allows you to upload documents and ask questions about them using AI. Built with FastAPI, ChromaDB, and modern web technologies.
-
-## Features
-
-- 🤖 **Intelligent Q&A**: Ask questions about your documents and get accurate answers
-- 📄 **Multiple File Formats**: Support for PDF, TXT, and CSV files
-- 🔍 **Semantic Search**: Advanced vector-based document retrieval
-- 🎨 **Modern UI**: Clean, responsive web interface
-- 🚀 **FastAPI Backend**: High-performance async API
-- 💾 **Vector Database**: Efficient document storage with ChromaDB
-- 🧠 **OpenAI Integration**: Optional LLM-powered responses
-- 🐳 **Docker Support**: Easy deployment with Docker
-
-## Quick Start
-
-### Prerequisites
-
-- Python 3.8+
-- pip or poetry
-- (Optional) OpenAI API key for enhanced responses
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd agentic-rag
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Set up environment variables** (optional)
-   ```bash
-   # Create .env file
-   echo "OPENAI_API_KEY=your_openai_api_key_here" > .env
-   ```
-
-4. **Run the application**
-   ```bash
-   python -m app.main
-   ```
-
-5. **Access the application**
-   - Open your browser and go to `http://localhost:8000`
-   - API documentation available at `http://localhost:8000/docs`
-
-## Usage
-
-### 1. Add Documents
-
-You can add documents in several ways:
-
-- **Upload Files**: Use the web interface to upload PDF, TXT, or CSV files
-- **Initialize Database**: Load all documents from the `data/docs` directory
-- **Add Text**: Paste text directly into the interface
-
-### 2. Ask Questions
-
-Once documents are loaded, you can:
-
-- Type your question in the query box
-- Choose whether to use document context (recommended)
-- Press Enter+Ctrl or click "Ask" to submit
-
-### 3. View Results
-
-The system will provide:
-
-- **AI-generated response** based on your documents
-- **Source information** showing which documents were used
-- **Similarity scores** for retrieved documents
-- **Context snippets** from relevant documents
-
-## Configuration
-
-The application can be configured using environment variables or a `.env` file:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `OPENAI_API_KEY` | `None` | OpenAI API key for enhanced responses |
-| `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | Sentence transformer model |
-| `CHROMA_PERSIST_DIRECTORY` | `./data/chroma` | Vector database storage |
-| `CHUNK_SIZE` | `1000` | Document chunk size |
-| `CHUNK_OVERLAP` | `200` | Overlap between chunks |
-| `MAX_RETRIEVED_DOCS` | `5` | Max documents to retrieve |
-| `DEBUG` | `true` | Enable debug mode |
-
-## How It Works
-
-1. **Document Processing**: Documents are chunked and converted to vector embeddings
-2. **Vector Storage**: Embeddings are stored in ChromaDB for efficient similarity search
-3. **Query Processing**: User queries are embedded and matched against document vectors
-4. **Response Generation**: Retrieved context is used to generate accurate responses
-5. **Source Attribution**: Responses include source information for transparency
-
-### Common Issues
-
-1. **Memory Issues**: Reduce `CHUNK_SIZE` if you encounter memory errors
-2. **Slow Responses**: Consider using a smaller embedding model or fewer retrieved documents
-3. **OpenAI API Errors**: Check your API key and rate limits
-4. **Document Parsing Errors**: Ensure documents are in supported formats (PDF, TXT, CSV)
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run the test suite
-6. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- [FastAPI](https://fastapi.tiangolo.com/) - Modern, fast web framework for building APIs
-- [ChromaDB](https://www.trychroma.com/) - Open-source embedding database
-- [Sentence Transformers](https://www.sbert.net/) - State-of-the-art text embeddings
-- [OpenAI](https://openai.com/) - AI language models for enhanced responses
-
-## Support
-
-For issues and questions:
-
-1. Check the [troubleshooting section](#troubleshooting)
-2. Search existing [GitHub issues](https://github.com/your-repo/agentic-rag/issues)
-3. Create a new issue with detailed information
+*AI-powered document intelligence that answers your questions instantly.*
 
 ---
 
-**Built with ❤️ for intelligent document Q&A**
+## ✨ Why You'll Love This
+
+- **🧠 Smart Answers**: Upload documents → Ask anything → Get precise AI responses
+- **⚡ Lightning Fast**: Built with FastAPI for instant responses
+- **📊 Multi-Format**: PDF, TXT, CSV files supported
+- **🔍 Semantic Magic**: Finds relevant content even with imperfect queries
+- **🎨 Beautiful UI**: Clean, modern interface that just works
+
+---
+
+## 🚀 One-Command Start
+
+```bash
+git clone <repository-url> && cd agentic-rag
+pip install -r requirements.txt
+python -m app.main
+```
+
+That's it. Your browser opens automatically at `http://localhost:8000`
+
+---
+
+## 💡 How It Works
+
+1. **Drop your documents** into the web interface
+2. **Ask questions** in natural language
+3. **Get answers** with source citations
+
+*Powered by advanced vector search and AI language models.*
+
+---
+
+## 🛠 Tech Stack
+
+- **Backend**: FastAPI + ChromaDB
+- **AI**: OpenAI GPT + Sentence Transformers  
+- **Frontend**: Modern responsive web UI
+- **Storage**: Efficient vector database
+
+---
+
+## 🎯 Perfect For
+
+- **Research**: Analyze academic papers and reports
+- **Business**: Query contracts, policies, and documentation
+- **Learning**: Study materials and textbooks
+- **Support**: Knowledge base and FAQ automation
+
+---
+
+## ⚙️ Quick Config
+
+```bash
+# Optional: Add OpenAI for enhanced responses
+echo "OPENAI_API_KEY=your_key_here" > .env
+```
+
+---
+
+## 📈 Why This Stands Out
+
+- **Zero Setup**: Works out of the box
+- **Context-Aware**: Understands document relationships
+- **Source Tracking**: Shows exactly where answers come from
+- **Scalable**: Handles thousands of documents efficiently
+
+---
+
+## 🔗 Resources
+
+- **API Docs**: `http://localhost:8000/docs`
+- **Health Check**: `http://localhost:8000/health`
+
+---
+
+*Built with passion for making knowledge accessible.* 🚀
