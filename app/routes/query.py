@@ -4,8 +4,8 @@ from typing import List, Dict, Any, Optional
 import os
 import tempfile
 from starlette.concurrency import run_in_threadpool
-from ..services.agent import RAGAgent
-from ..config import settings
+from app.services.agent import RAGAgent
+from app.config import settings
 
 router = APIRouter()
 

@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional
 import os
-from ..utils.embeddings import EmbeddingManager
-from ..config import settings
+from app.utils.embeddings import EmbeddingManager
+from app.config import settings
 
 
 class DocumentRetriever:

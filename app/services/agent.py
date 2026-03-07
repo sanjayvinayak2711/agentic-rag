@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional
 import os
-from ..config import settings
-from .retriever import DocumentRetriever
+from app.config import settings
+from app.services.retriever import DocumentRetriever
 
 try:
     import openai
