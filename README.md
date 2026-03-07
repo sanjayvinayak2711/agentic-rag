@@ -49,19 +49,6 @@ A powerful Retrieval-Augmented Generation (RAG) system that allows you to upload
    - Open your browser and go to `http://localhost:8000`
    - API documentation available at `http://localhost:8000/docs`
 
-### Docker Deployment
-
-1. **Build and run with Docker Compose**
-   ```bash
-   docker-compose up --build
-   ```
-
-2. **Or build and run manually**
-   ```bash
-   docker build -t agentic-rag .
-   docker run -p 8000:8000 -v $(pwd)/data:/app/data agentic-rag
-   ```
-
 ## Usage
 
 ### 1. Add Documents
@@ -89,48 +76,6 @@ The system will provide:
 - **Similarity scores** for retrieved documents
 - **Context snippets** from relevant documents
 
-## API Endpoints
-
-### Query Documents
-```http
-POST /api/query
-Content-Type: application/json
-
-{
-  "query": "What is machine learning?",
-  "use_context": true
-}
-```
-
-### Add Document
-```http
-POST /api/documents
-Content-Type: application/json
-
-{
-  "text": "Machine learning is a subset of AI...",
-  "metadata": {"source": "manual"}
-}
-```
-
-### Upload File
-```http
-POST /api/upload
-Content-Type: multipart/form-data
-
-file: [your_file.pdf]
-```
-
-### Get Statistics
-```http
-GET /api/stats
-```
-
-### Initialize Database
-```http
-POST /api/initialize
-```
-
 ## Configuration
 
 The application can be configured using environment variables or a `.env` file:
@@ -145,31 +90,6 @@ The application can be configured using environment variables or a `.env` file:
 | `MAX_RETRIEVED_DOCS` | `5` | Max documents to retrieve |
 | `DEBUG` | `true` | Enable debug mode |
 
-## Architecture
-
-```
-agentic-rag/
-├── app/
-│   ├── main.py                 # FastAPI application
-│   ├── config.py               # Configuration settings
-│   ├── routes/
-│   │   └── query.py            # API routes
-│   ├── services/
-│   │   ├── agent.py            # RAG agent logic
-│   │   └── retriever.py        # Document retrieval
-│   └── utils/
-│       └── embeddings.py       # Text embedding utilities
-├── ui/
-│   ├── index.html              # Web interface
-│   ├── main.js                 # Frontend JavaScript
-│   └── styles.css              # Styling
-├── data/
-│   └── docs/                   # Document storage
-├── tests/
-│   └── test_app.py             # Unit tests
-└── requirements.txt            # Python dependencies
-```
-
 ## How It Works
 
 1. **Document Processing**: Documents are chunked and converted to vector embeddings
@@ -178,77 +98,12 @@ agentic-rag/
 4. **Response Generation**: Retrieved context is used to generate accurate responses
 5. **Source Attribution**: Responses include source information for transparency
 
-## Testing
-
-Run the test suite:
-
-```bash
-# Install test dependencies
-pip install pytest pytest-asyncio httpx
-
-# Run tests
-pytest tests/
-
-# Run with coverage
-pytest tests/ --cov=app --cov-report=html
-```
-
-## Development
-
-### Setting up the development environment
-
-1. **Clone and install dependencies**
-   ```bash
-   git clone <repository-url>
-   cd agentic-rag
-   pip install -r requirements.txt
-   pip install -e .  # Install in development mode
-   ```
-
-2. **Run in development mode**
-   ```bash
-   python -m app.main --reload
-   ```
-
-3. **Code formatting and linting**
-   ```bash
-   pip install black flake8 mypy
-   black app/
-   flake8 app/
-   mypy app/
-   ```
-
-### Adding New Features
-
-1. **New document types**: Extend the `EmbeddingManager.process_document()` method
-2. **New embedding models**: Modify the configuration and embedding utilities
-3. **Additional API endpoints**: Add new routes in `app/routes/`
-4. **UI enhancements**: Update HTML, CSS, and JavaScript in the `ui/` directory
-
-## Performance Considerations
-
-- **Embedding Model**: The default `all-MiniLM-L6-v2` provides a good balance of speed and accuracy
-- **Chunk Size**: Larger chunks provide more context but slower processing
-- **Database Size**: ChromaDB scales well, but consider pagination for large document sets
-- **Caching**: Responses can be cached for frequently asked questions
-
-## Troubleshooting
-
 ### Common Issues
 
 1. **Memory Issues**: Reduce `CHUNK_SIZE` if you encounter memory errors
 2. **Slow Responses**: Consider using a smaller embedding model or fewer retrieved documents
 3. **OpenAI API Errors**: Check your API key and rate limits
 4. **Document Parsing Errors**: Ensure documents are in supported formats (PDF, TXT, CSV)
-
-### Debug Mode
-
-Enable debug mode for detailed logging:
-
-```bash
-export DEBUG=true
-python -m app.main
-```
 
 ## Contributing
 
