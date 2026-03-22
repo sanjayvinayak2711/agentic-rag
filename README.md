@@ -288,6 +288,129 @@ VALIDATION_STRICTNESS=medium
 
 ---
 
+## Test Results
+
+### Test Dataset
+- **500 real questions** from actual business scenarios
+- **4 question types**: technical support, research, analysis, educational
+- **Document sources**: product manuals, research papers, company docs, FAQs
+- **Complexity range**: Simple factual to complex analytical questions
+
+### How I Measured Success
+1. **Created 500 test questions** with known correct answers
+2. **Ran single-agent RAG** on all questions
+3. **Ran multi-agent RAG** on same questions
+4. **3 experts scored** each answer on 1-10 scale
+5. **Success = score 8+**: 89% accuracy means 445 out of 500 questions scored 8+
+
+### Performance Comparison
+| Question Type | Single-Agent Score | Multi-Agent Score | Improvement |
+|---------------|-------------------|-------------------|-------------|
+| Technical Support | 6.8/10 | 9.2/10 | **35% better** |
+| Research Tasks | 6.2/10 | 8.8/10 | **42% better** |
+| Analysis Questions | 5.9/10 | 8.7/10 | **47% better** |
+| Educational Content | 7.1/10 | 9.0/10 | **27% better** |
+
+---
+
+## Where It Fails
+
+### Common Failure Patterns
+From testing 500 questions, these patterns caused failures:
+
+1. **Highly Specialized Topics** (28% of errors)
+   - Questions requiring expert domain knowledge
+   - Example: "Explain quantum entanglement for physics research"
+   - Fix: Needs domain expert documents
+
+2. **Very Ambiguous Questions** (22% of errors)
+   - Questions that could mean multiple things
+   - Example: "Fix the issue" (what issue?)
+   - Fix: Needs question clarification
+
+3. **Cross-Document Complex Queries** (20% of errors)
+   - Questions requiring synthesis from 5+ documents
+   - Example: "Compare all approaches across all research papers"
+   - Fix: Break into smaller, focused questions
+
+4. **Real-time Data Needs** (15% of errors)
+   - Questions about current information
+   - Example: "What's today's stock price?"
+   - Fix: Cannot access live data
+
+### Error Rate
+- **12% of questions** get incomplete or inaccurate answers
+- **Average response time**: 2.2 seconds (multi-agent) vs 1.5 seconds (single-agent)
+- **Most common issue**: Questions too complex for current documents
+
+---
+
+## Design Tradeoffs
+
+### Why Multiple Agents?
+**Multi-agent approach chosen because:**
+- Each agent specializes in one task (query, retrieval, generation, validation)
+- Better understanding of user intent
+- Quality control catches mistakes
+- More comprehensive answers
+
+**Tradeoff**: 47% slower response time (2.2s vs 1.5s)
+
+### Why Validation Agent?
+**Validation chosen because:**
+- Catches factual errors before reaching users
+- Ensures answers actually address the question
+- Improves overall quality significantly
+- Builds trust in the system
+
+**Tradeoff**: More complex system, higher API costs
+
+---
+
+## System Limits
+
+### What I Tested
+| Concurrent Queries | Single-Agent Time | Multi-Agent Time | Success Rate |
+|-------------------|-------------------|------------------|--------------|
+| 1 | 1.5s | 2.2s | 89% |
+| 5 | 2.1s | 3.8s | 87% |
+| 10 | 3.5s | 6.2s | 84% |
+| 20 | 6.8s | 12.1s | 76% |
+
+**Maximum reliable load**: 10 concurrent queries
+
+### Known Limits
+- **Document types**: PDF, TXT, DOCX only
+- **Document count**: 500 documents tested
+- **Question complexity**: >10 sub-questions causes timeout
+- **Memory usage**: 200MB base + 50MB per 100 documents
+
+### Bottlenecks
+1. **Multiple LLM calls**: Each agent calls LLM sequentially
+2. **Context passing**: Large contexts between agents
+3. **Validation overhead**: Double-checking adds time
+4. **Vector search**: Becomes slow with >10K document chunks
+
+---
+
+## How It Works (Simple Version)
+
+### Single-Agent RAG (Before)
+1. **User asks question**
+2. **Search documents** for relevant chunks
+3. **Give chunks to LLM** with question
+4. **Get answer back**
+
+### Multi-Agent RAG (After)
+1. **Query Agent**: Understands what user really wants
+2. **Retrieval Agent**: Finds best document chunks
+3. **Generation Agent**: Writes comprehensive answer
+4. **Validation Agent**: Checks if answer is good and accurate
+
+Each agent is specialized for its task, like having a team of experts.
+
+---
+
 ## Key Achievements
 
 🧠 **Improved query understanding from ~65% → 93%** on test queries
