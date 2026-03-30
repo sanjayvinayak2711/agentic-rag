@@ -1,6 +1,10 @@
-# Agentic RAG System
+# 🤖 Agentic RAG System
 
-An intelligent document Q&A system that plans, retrieves, reasons, and self-corrects.
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+An intelligent document Q&A system that plans, retrieves, reasons, and self-corrects using advanced agentic AI patterns.
 
 ## What It Does
 
@@ -78,21 +82,47 @@ tests/
 └── test_10_10_final.py      # Output quality checks
 ```
 
-## Quick Start
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.9+
+- OpenAI API key
+
+### Installation
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd agentic-rag
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
 # Install dependencies
 pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env
-# Add your OPENAI_API_KEY to .env
+# Add your OPENAI_API_KEY to .env file
+```
 
-# Run
+### Running the Application
+
+```bash
+# Option 1: Direct run
 python backend/main.py
 
-# Access at http://localhost:8000
+# Option 2: Using the start script
+python start.py
+
+# Option 3: Batch file (Windows)
+run.bat
 ```
+
+🌐 **Access the application at:** http://localhost:8000
+
+📚 **API Documentation:** http://localhost:8000/docs
 
 ## API Endpoints
 
@@ -172,13 +202,26 @@ The difference is the loop. It doesn't just answer—it checks its own work and 
 - Multi-hop reasoning (complex chains)
 - Parallel tool execution
 
-## Run Tests
+## 🧪 Testing
 
 ```bash
-python tests/test_level4.py        # Verify all features
-python tests/test_dense_detection.py # Test technical content handling
+# Run all tests
+python -m pytest tests/
+
+# Run specific test suites
+python tests/test_level4.py           # Verify all features
+python tests/test_dense_detection.py  # Test technical content handling
 python tests/test_10_10_final.py     # Check output quality
+
+# Run with coverage
+python -m pytest tests/ --cov=backend --cov-report=html
 ```
+
+## 📊 Monitoring & Logs
+
+- **Application logs**: `logs/server.log`
+- **Health check**: GET `/api/v1/health`
+- **System metrics**: Available in the admin panel
 
 ## License
 
