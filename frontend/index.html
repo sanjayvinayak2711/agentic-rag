@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="chat-container">
+        <header class="chat-header">
+            <div class="header-content">
+                <h1>Agentic-RAG</h1>
+                <button class="new-chat-btn" id="newChatBtn">
+                    <i class="fas fa-plus"></i>
+                    <span>New Chat</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="chat-main">
+            <div class="messages-container" id="messagesContainer">
+                <div class="message assistant-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-wrapper">
+                        <div class="message-content">
+                            <p>Hello! I'm your AI assistant. How can I help you with your documents today?</p>
+                        </div>
+                        <div class="message-timestamp">05:14 PM</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="chat-footer">
+            <div class="input-container">
+                <div class="file-upload-wrapper">
+                    <input type="file" id="fileInput" accept="*" multiple style="display: none;">
+                    <button class="file-upload-btn" id="fileUploadBtn">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="text-input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Ask me anything about your documents..." 
+                        rows="1"
+                        maxlength="2000"
+                    ></textarea>
+                    <div class="char-count" id="charCount">0/2000</div>
+                </div>
+                <button class="send-btn" id="sendBtn" disabled>
+                    <i class="fas fa-arrow-up"></i>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
