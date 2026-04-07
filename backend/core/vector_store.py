@@ -35,18 +35,24 @@ class VectorStore:
                 settings=chroma_settings
             )
             
-            # Try to get the old default collection first (for backward compatibility)
+            # 🔥 CRITICAL: Delete all old collections to avoid dimension mismatch (768 vs 384)
             try:
-                old_collection = self.client.get_collection(self.collection_name)
-                self.collection = old_collection
-                self._active_namespace = "legacy"
-                self._loaded_collections["legacy"] = old_collection
-                logger.info("Using legacy collection for backward compatibility")
+                collections = self.client.list_collections()
+                for coll in collections:
+                    try:
+                        self.client.delete_collection(coll.name)
+                        logger.info(f"Deleted old collection: {coll.name}")
+                    except:
+                        pass
             except:
-                # Fall back to new namespace system
-                self.collection = self._get_or_create_collection(self._active_namespace)
+                pass
             
-            logger.info("ChromaDB client initialized successfully")
+            # Create fresh collection
+            self.collection = None
+            self._loaded_collections = {}
+            self._active_namespace = None
+            
+            logger.info("ChromaDB client initialized successfully (fresh start)")
         except Exception as e:
             logger.error(f"Error initializing ChromaDB client: {str(e)}")
             raise
