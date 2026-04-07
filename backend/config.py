@@ -7,6 +7,10 @@ import random
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+
+# Load environment variables from .env file (local development)
+load_dotenv()
 
 # Get project root directory
 PROJECT_ROOT = Path(__file__).parent.parent
