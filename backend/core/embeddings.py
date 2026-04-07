@@ -31,7 +31,7 @@ class EmbeddingManager:
 
 
 class EmbeddingGenerator:
-    """Generates embeddings using sentence transformers with singleton pattern"""
+    """Generates embeddings using sentence transformers with lazy loading"""
     
     def __init__(self):
         self.model_name = settings.EMBEDDING_MODEL
@@ -39,8 +39,15 @@ class EmbeddingGenerator:
         self.normalize = getattr(settings, 'EMBEDDING_NORMALIZE', True)
         self.query_prefix = getattr(settings, 'EMBEDDING_PREFIX_QUERY', '')
         self.doc_prefix = getattr(settings, 'EMBEDDING_PREFIX_DOC', '')
-        self.model = EmbeddingManager.get_model(self.model_name, self.device)
-        logger.info(f"Embedding generator initialized. Dimension: {self.get_embedding_dimension()}")
+        self._model = None  # Lazy loading - don't load at startup
+        logger.info(f"Embedding generator ready (model not loaded yet)")
+    
+    @property
+    def model(self):
+        """Lazy load model only when first accessed"""
+        if self._model is None:
+            self._model = EmbeddingManager.get_model(self.model_name, self.device)
+        return self._model
     
     async def generate_embedding(self, text: str, is_query: bool = False) -> List[float]:
         """Generate embedding for a single text with BGE prefix support"""

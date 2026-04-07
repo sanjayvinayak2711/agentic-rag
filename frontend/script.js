@@ -4,7 +4,7 @@ class AGENTIC_RAG {
         this.attachEventListeners();
         this.isProcessing = false;
         this.typingTimeout = null;
-        this.apiBaseUrl = '/api/v1';
+        this.apiBaseUrl = 'https://agentic-rag-production.up.railway.app/api/v1';
         this.initializeApp();
     }
 
