@@ -36,8 +36,8 @@ class Settings(BaseSettings):
     
     # Server settings
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
-    DEBUG: bool = True
+    PORT: int = int(os.environ.get("PORT", 8000))  # Railway provides PORT env var
+    DEBUG: bool = False  # Disable reload for production
     
     # Database settings
     CHROMA_DB_PATH: str = "data/chroma_db"
