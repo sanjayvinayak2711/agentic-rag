@@ -39,64 +39,6 @@ def check_dependencies():
         print("Please run: pip install -r requirements.txt")
         return False
 
-def create_directories():
-    """Create necessary directories"""
-    directories = ["data/uploads", "logs"]
-    for directory in directories:
-        os.makedirs(directory, exist_ok=True)
-    print("✅ Directories created")
-
-def start_backend():
-    """Start the backend server"""
-    print("🚀 Starting backend server...")
-    os.chdir("backend")
-    
-    try:
-        # Start the server in a subprocess
-        process = subprocess.Popen([sys.executable, "main.py"])
-        
-        # Wait a moment for server to start
-        print("⏳ Waiting for server to start...")
-        time.sleep(3)
-        
-        # Open browser automatically
-        print("🌐 Opening browser...")
-        webbrowser.open("http://localhost:8000")
-        
-        print("✅ Browser opened at http://localhost:8000")
-        print("📚 API docs available at http://localhost:8000/docs")
-        print("\nPress Ctrl+C to stop the server\n")
-        
-        # Wait for the process to complete
-        process.wait()
-        
-    except KeyboardInterrupt:
-        print("\n👋 Server stopped by user")
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Failed to start server: {e}")
-        sys.exit(1)
-
-def main():
-    """Main startup function"""
-    print("🎯 Agentic-RAG Application Startup")
-    print("=" * 40)
-    
-    check_python_version()
-    
-    if not check_dependencies():
-        sys.exit(1)
-    
-    create_directories()
-    
-    print("\n🌐 Application will be available at: http://localhost:8000")
-    print("📚 API documentation: http://localhost:8000/docs")
-    print("🔄 Browser will open automatically...")
-    
-    start_backend()
-
-if __name__ == "__main__":
-    main()
-
 def install_dependencies():
     """Install required dependencies"""
     print("📦 Installing dependencies...")
@@ -116,18 +58,8 @@ def create_directories():
     print("✅ Directories created")
 
 def check_environment():
-    """Check environment configuration"""
-    env_file = Path(".env")
-    if not env_file.exists():
-        print("⚠️  .env file not found. Creating from example...")
-        if Path(".env.example").exists():
-            import shutil
-            shutil.copy(".env.example", ".env")
-            print("✅ .env file created from example")
-        else:
-            print("⚠️  No .env.example found. Please configure your environment manually")
-    else:
-        print("✅ .env file found")
+    """Check environment configuration - runtime config only"""
+    print("✅ Using runtime configuration (no .env file needed)")
 
 def start_backend():
     """Start the backend server"""

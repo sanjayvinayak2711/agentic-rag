@@ -9,46 +9,17 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Agent Execution Trace Sidebar -->
-        <aside class="execution-trace-panel" id="executionTracePanel">
-            <div class="trace-header">
-                <h3><i class="fas fa-brain"></i> Agent Execution Trace</h3>
-                <button class="toggle-trace-btn" id="toggleTraceBtn">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-            </div>
-            <div class="trace-content" id="traceContent">
-                <div class="trace-placeholder">
-                    <i class="fas fa-robot"></i>
-                    <p>Submit a query to see the agent execution trace</p>
-                </div>
-            </div>
-            <div class="trace-stats" id="traceStats" style="display: none;">
-                <div class="stat-item">
-                    <span class="stat-label">⭐ Score:</span>
-                    <span class="stat-value" id="traceScore">-</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">🔁 Iterations:</span>
-                    <span class="stat-value" id="traceIterations">-</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">📚 Docs Retrieved:</span>
-                    <span class="stat-value" id="traceDocs">-</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">⏱️ Time:</span>
-                    <span class="stat-value" id="traceTime">-</span>
-                </div>
-            </div>
-        </aside>
-
         <!-- Main Chat Container -->
         <div class="chat-container">
         <header class="chat-header">
             <div class="header-content">
                 <h1>Agentic-RAG</h1>
+                <div class="api-status-badge api-inactive" id="apiStatusBadge">API Inactive</div>
                 <div class="header-buttons">
+                    <button class="search-files-btn" id="searchFilesBtn">
+                        <i class="fas fa-search"></i>
+                        <span>Search</span>
+                    </button>
                     <button class="ai-config-btn" id="configBtn">
                         <i class="fas fa-robot"></i>
                         <span>AI Config</span>
@@ -60,6 +31,25 @@
                 </div>
             </div>
         </header>
+
+        <!-- Search Modal -->
+        <div class="search-modal" id="searchModal">
+            <div class="search-modal-content">
+                <div class="search-header">
+                    <h3><i class="fas fa-search"></i> Search in Chat</h3>
+                    <button class="close-modal-btn" id="closeSearchBtn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="search-body">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Type to search..." autocomplete="off">
+                    </div>
+                    <div class="search-results-info" id="searchResultsInfo"></div>
+                </div>
+            </div>
+        </div>
 
         <!-- AI Configuration Modal -->
         <div class="config-modal" id="configModal">
@@ -82,6 +72,9 @@
                             <option value="huggingface">HuggingFace</option>
                             <option value="local">Local (Ollama)</option>
                         </select>
+                        <small style="color: var(--text-muted); margin-top: 0.5rem; display: block;">
+                            💡 <strong>API Required:</strong> An API key is required for AI processing. Configure your key above.
+                        </small>
                     </div>
                     
                     <div class="config-group">
@@ -95,8 +88,11 @@
                     <div class="config-group">
                         <label for="modelSelect">Model:</label>
                         <select id="modelSelect" class="config-select">
-                            <option value="">Auto-select</option>
+                            <option value="">Auto-select (Recommended)</option>
                         </select>
+                        <small style="color: var(--text-muted); margin-top: 0.5rem; display: block;">
+                            💡 <strong>Auto-fallback:</strong> If selected model fails, system will try other models automatically.
+                        </small>
                     </div>
                     
                     <div class="config-group">

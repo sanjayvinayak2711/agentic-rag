@@ -4,8 +4,21 @@ class AGENTIC_RAG {
         this.attachEventListeners();
         this.isProcessing = false;
         this.typingTimeout = null;
-        this.apiBaseUrl = 'https://agentic-rag-production.up.railway.app/api/v1';
+        this.apiBaseUrl = 'http://localhost:8000/api/v1';  // Local testing
+        this.hasDocument = false; // Track if user uploaded a document
         this.initializeApp();
+    }
+
+    getProviderFallbackModels() {
+        return {
+            gemini: ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro'],
+            openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+            anthropic: ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'],
+            nvidia: ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-405b-instruct', 'meta/llama-3.1-8b-instruct', 'mistralai/mistral-large'],
+            groq: ['llama-3.1-70b-versatile', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'],
+            huggingface: ['mistralai/Mistral-7B-Instruct-v0.2', 'meta-llama/Llama-2-7b-chat-hf', 'google/gemma-7b-it', 'tiiuae/falcon-7b-instruct'],
+            local: ['llama3.1:8b', 'llama3:8b', 'mistral:7b', 'qwen2.5:7b', 'phi3:mini']
+        };
     }
 
     initializeElements() {
@@ -16,16 +29,7 @@ class AGENTIC_RAG {
         this.fileUploadBtn = document.getElementById('fileUploadBtn');
         this.charCount = document.getElementById('charCount');
         this.newChatBtn = document.getElementById('newChatBtn');
-        
-        // Execution trace elements
-        this.executionTracePanel = document.getElementById('executionTracePanel');
-        this.traceContent = document.getElementById('traceContent');
-        this.traceStats = document.getElementById('traceStats');
-        this.toggleTraceBtn = document.getElementById('toggleTraceBtn');
-        this.traceScore = document.getElementById('traceScore');
-        this.traceIterations = document.getElementById('traceIterations');
-        this.traceDocs = document.getElementById('traceDocs');
-        this.traceTime = document.getElementById('traceTime');
+        this.apiStatusBadge = document.getElementById('apiStatusBadge');
     }
 
     attachEventListeners() {
@@ -40,6 +44,28 @@ class AGENTIC_RAG {
         }
         if (this.newChatBtn) this.newChatBtn.addEventListener('click', () => this.startNewChat());
 
+        // Search modal event listeners
+        const searchFilesBtn = document.getElementById('searchFilesBtn');
+        const closeSearchBtn = document.getElementById('closeSearchBtn');
+        const searchInput = document.getElementById('searchInput');
+        const searchModal = document.getElementById('searchModal');
+
+        if (searchFilesBtn) searchFilesBtn.addEventListener('click', () => this.showSearchModal());
+        if (closeSearchBtn) closeSearchBtn.addEventListener('click', () => this.hideSearchModal());
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => this.performSearch(e.target.value));
+            searchInput.addEventListener('keydown', (e) => this.handleSearchKeydown(e));
+        }
+
+        // Close search modal when clicking outside
+        if (searchModal) {
+            searchModal.addEventListener('click', (e) => {
+                if (e.target === searchModal) {
+                    this.hideSearchModal();
+                }
+            });
+        }
+
         // Configuration modal event listeners
         const configBtn = document.getElementById('configBtn');
         const closeConfigBtn = document.getElementById('closeConfigBtn');
@@ -49,6 +75,7 @@ class AGENTIC_RAG {
         const providerSelect = document.getElementById('providerSelect');
         const tempSlider = document.getElementById('tempSlider');
         const tempValue = document.getElementById('tempValue');
+        const apiKeyInput = document.getElementById('apiKeyInput');
 
         if (configBtn) configBtn.addEventListener('click', () => this.showConfigModal());
         if (closeConfigBtn) closeConfigBtn.addEventListener('click', () => this.hideConfigModal());
@@ -82,145 +109,6 @@ class AGENTIC_RAG {
             }
         });
 
-        // Toggle execution trace panel
-        if (this.toggleTraceBtn) {
-            this.toggleTraceBtn.addEventListener('click', () => this.toggleExecutionTrace());
-        }
-    }
-
-    toggleExecutionTrace() {
-        if (this.executionTracePanel) {
-            this.executionTracePanel.classList.toggle('collapsed');
-            const icon = this.toggleTraceBtn.querySelector('i');
-            if (this.executionTracePanel.classList.contains('collapsed')) {
-                icon.className = 'fas fa-chevron-right';
-            } else {
-                icon.className = 'fas fa-chevron-left';
-            }
-        }
-    }
-
-    updateExecutionTrace(data) {
-        if (!this.traceContent || !this.traceStats) return;
-
-        // Show stats section
-        this.traceStats.style.display = 'block';
-
-        // Update stats
-        if (this.traceScore) this.traceScore.textContent = data.evaluation_score ? data.evaluation_score.toFixed(1) : '-';
-        if (this.traceIterations) this.traceIterations.textContent = data.iterations || '-';
-        if (this.traceDocs) this.traceDocs.textContent = data.retrieved_docs || '-';
-        if (this.traceTime) this.traceTime.textContent = data.processing_time ? `${data.processing_time.toFixed(1)}s` : '-';
-
-        // Build execution trace steps
-        let traceHTML = '';
-        const latencies = data.agent_latencies || {};
-        
-        // Step 1: Retrieval with latency
-        const retrievalTime = latencies.retrieval ? `(${latencies.retrieval.toFixed(0)}ms)` : '';
-        traceHTML += `
-            <div class="trace-step">
-                <div class="trace-step-icon">1</div>
-                <div class="trace-step-content">
-                    <div class="trace-step-title">Retrieval ${retrievalTime}</div>
-                    <div class="trace-step-desc">${data.retrieved_docs || 0} documents fetched</div>
-                </div>
-            </div>
-        `;
-
-        // Step 2: Generation with latency
-        const genTime = latencies.generation ? `(${latencies.generation.toFixed(0)}ms)` : '';
-        traceHTML += `
-            <div class="trace-step">
-                <div class="trace-step-icon">2</div>
-                <div class="trace-step-content">
-                    <div class="trace-step-title">Generation ${genTime}</div>
-                    <div class="trace-step-desc">Initial answer created</div>
-                </div>
-            </div>
-        `;
-
-        // Step 3: Evaluation/Iterations with latency
-        const iterations = data.iterations || 1;
-        const criticTime = latencies.critic ? `(${latencies.critic.toFixed(0)}ms)` : '';
-        if (iterations > 1) {
-            traceHTML += `
-                <div class="trace-step warning">
-                    <div class="trace-step-icon">3</div>
-                    <div class="trace-step-content">
-                        <div class="trace-step-title">Evaluation ${criticTime}</div>
-                        <div class="trace-step-desc">Weak answer, ${iterations - 1} refinement(s)</div>
-                    </div>
-                </div>
-            `;
-            
-            // Show retry reason if available
-            if (data.retry_reason) {
-                traceHTML += `
-                    <div class="trace-retry-reason">
-                        <div class="retry-title">🔍 Why retry happened:</div>
-                        <div class="retry-detail">Score: ${data.retry_reason.score}/10</div>
-                        <div class="retry-detail">Issue: ${data.retry_reason.issue}</div>
-                        <div class="retry-detail">Missing: ${data.retry_reason.missing ? data.retry_reason.missing.join(', ') : 'N/A'}</div>
-                    </div>
-                `;
-            }
-        } else {
-            traceHTML += `
-                <div class="trace-step success">
-                    <div class="trace-step-icon">3</div>
-                    <div class="trace-step-content">
-                        <div class="trace-step-title">Evaluation ${criticTime}</div>
-                        <div class="trace-step-desc">Passed first attempt</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Step 4: Critic Validation
-        traceHTML += `
-            <div class="trace-step success">
-                <div class="trace-step-icon">4</div>
-                <div class="trace-step-content">
-                    <div class="trace-step-title">Critic Validation</div>
-                    <div class="trace-step-desc">✓ Answer validated</div>
-                </div>
-            </div>
-        `;
-
-        // Sources section (clickable)
-        if (data.sources && data.sources.length > 0) {
-            traceHTML += `
-                <div class="trace-sources">
-                    <div class="sources-title">📚 Sources:</div>
-            `;
-            data.sources.forEach((source, index) => {
-                traceHTML += `
-                    <a href="#" class="source-link" data-source-id="${source.id || index}">
-                        [${index + 1}] ${source.filename || 'document'} (chunk ${source.chunk_count || index + 1})
-                    </a>
-                `;
-            });
-            traceHTML += `</div>`;
-        }
-
-        this.traceContent.innerHTML = traceHTML;
-        
-        // Add click handlers for source links
-        this.traceContent.querySelectorAll('.source-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const sourceId = e.target.dataset.sourceId;
-                this.showSourceDetails(sourceId, data.sources[sourceId]);
-            });
-        });
-    }
-    
-    showSourceDetails(index, source) {
-        // Could show a modal or expand the source details
-        console.log(`Source ${index}:`, source);
-        // For now, just alert - could be enhanced to show a modal
-        alert(`Source [${parseInt(index) + 1}]: ${source.filename || 'Document'}\nChunks: ${source.chunk_count || 'N/A'}`);
     }
 
     handleInputChange() {
@@ -248,6 +136,14 @@ class AGENTIC_RAG {
     async sendMessage() {
         const message = this.messageInput.value.trim();
         if (!message || this.isProcessing) return;
+
+        // Check if user has uploaded a document
+        if (!this.hasDocument) {
+            this.addMessage('Please upload a document first.', 'assistant');
+            this.messageInput.value = '';
+            this.handleInputChange();
+            return;
+        }
 
         // Store current question for display
         this.currentQuestion = message;
@@ -287,9 +183,6 @@ class AGENTIC_RAG {
 
             const data = await response.json();
             this.lastResponseData = data; // Store for detailed display
-            
-            // Update execution trace panel
-            this.updateExecutionTrace(data);
             
             this.addMessage(data.response || data.answer || 'I processed your query but couldn\'t generate a response.', 'assistant');
             
@@ -366,6 +259,7 @@ class AGENTIC_RAG {
             messageDiv.appendChild(avatarDiv);
             contentWrapper.appendChild(contentDiv);
             contentWrapper.appendChild(timestampDiv);
+            
             messageDiv.appendChild(contentWrapper);
         }
 
@@ -413,10 +307,72 @@ class AGENTIC_RAG {
     async initializeApp() {
         try {
             await this.checkBackendHealth();
+            await this.refreshConfigStatus();
             // Backend connected successfully - no message shown
         } catch (error) {
             console.error('Backend health check failed:', error);
+            this.updateApiStatusBadge(false, 'API Inactive');
             this.addMessage('⚠️ Backend connection failed. The app will run in demo mode. Please check if the backend server is running at https://agentic-rag.onrender.com', 'assistant');
+        }
+    }
+
+    updateApiStatusBadge(isActive, text) {
+        if (!this.apiStatusBadge) return;
+        this.apiStatusBadge.classList.remove('api-active', 'api-inactive');
+        this.apiStatusBadge.classList.add(isActive ? 'api-active' : 'api-inactive');
+        this.apiStatusBadge.textContent = text || (isActive ? 'API Active' : 'API Inactive');
+    }
+
+    async refreshConfigStatus() {
+        try {
+            // Backward-compatible flow:
+            // 1) Prefer new /config-status endpoint
+            // 2) Fall back to /config on older backends
+            let response = await fetch(`${this.apiBaseUrl}/config-status`);
+            if (response.ok) {
+                const status = await response.json();
+                this.updateApiStatusBadge(!!status.active, status.status_text || (status.active ? 'API Active' : 'API Inactive'));
+                return;
+            }
+
+            response = await fetch(`${this.apiBaseUrl}/config`);
+            if (!response.ok) {
+                this.updateApiStatusBadge(false, 'API Inactive');
+                return;
+            }
+
+            const config = await response.json();
+            if (!config.configured) {
+                this.updateApiStatusBadge(false, 'API Inactive');
+                return;
+            }
+
+            // Older backend compatibility: verify actual connectivity with /test-api.
+            const provider = config.provider || 'gemini';
+            const model = config.model || '';
+            const apiKey = document.getElementById('apiKeyInput')?.value || '';
+            if (provider !== 'local' && !apiKey) {
+                this.updateApiStatusBadge(true, 'API Configured');
+                return;
+            }
+            const testResp = await fetch(`${this.apiBaseUrl}/test-api`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider,
+                    model,
+                    api_key: apiKey
+                })
+            });
+            const testResult = await testResp.json();
+            if (testResult.success) {
+                this.updateApiStatusBadge(true, 'API Active');
+            } else {
+                this.updateApiStatusBadge(false, 'API Inactive');
+            }
+        } catch (error) {
+            console.error('Failed to refresh config status:', error);
+            this.updateApiStatusBadge(false, 'API Inactive');
         }
     }
 
@@ -460,6 +416,9 @@ class AGENTIC_RAG {
             }
 
             const result = await response.json();
+            
+            // Mark that user has uploaded a document
+            this.hasDocument = true;
             
             // Update to success state and show assistant message in one function
             this.updateProcessingMessage(processingMessageId, 'success', file.name);
@@ -568,7 +527,23 @@ class AGENTIC_RAG {
         }
     }
 
-    startNewChat() {
+    async startNewChat() {
+        // Clear runtime config when chat is refreshed
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/clear-config`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            if (response.ok) {
+                console.log('✅ Runtime config cleared on chat refresh');
+                this.updateApiStatusBadge(false, 'API Inactive');
+            }
+        } catch (error) {
+            console.error('Failed to clear config on chat refresh:', error);
+        }
+        
         // Clear all messages except the initial greeting
         this.messagesContainer.innerHTML = `
             <div class="message assistant-message">
@@ -642,45 +617,151 @@ class AGENTIC_RAG {
             this.updateModelOptions(config.provider);
             
             // Set temperature
-            document.getElementById('tempSlider').value = config.temperature || 0.7;
-            document.getElementById('tempValue').textContent = config.temperature || 0.7;
+            const temp = config.temperature || 0.7;
+            document.getElementById('tempSlider').value = temp;
+            document.getElementById('tempValue').textContent = temp;
+            
+            // Show masked API key if configured
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            if (config.has_api_key) {
+                apiKeyInput.value = config.api_key || '••••••••';
+                apiKeyInput.placeholder = 'API key configured (••••••••)';
+            } else {
+                apiKeyInput.value = '';
+                apiKeyInput.placeholder = 'Enter your API key';
+            }
             
         } catch (error) {
             console.error('Failed to load config:', error);
         }
     }
 
-    updateModelOptions(provider) {
+    async updateModelOptions(provider) {
         const modelSelect = document.getElementById('modelSelect');
-        modelSelect.innerHTML = '<option value="">Auto-select</option>';
+        const apiKeyGroup = document.getElementById('apiKeyInput').parentElement;
+        const apiKeyInput = document.getElementById('apiKeyInput');
         
-        const models = {
-            gemini: ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
-            openai: ['gpt-4o-mini', 'gpt-3.5-turbo', 'gpt-4o'],
-            anthropic: ['claude-3-haiku-20240307', 'claude-3-sonnet-20240229', 'claude-3-opus-20240229'],
-            nvidia: ['meta/llama3-70b-instruct', 'meta/llama3-8b-instruct', 'mistralai/Mistral-7B-Instruct-v0.2'],
-            groq: ['llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768'],
-            huggingface: ['mistralai/Mistral-7B-Instruct-v0.2', 'meta-llama/Llama-2-7b-chat-hf', 'google/gemma-7b'],
-            local: ['llama3.2:1b', 'llama3.2:3b', 'llama3.2:7b']
-        };
+        modelSelect.innerHTML = '<option value="">Auto-select from API (Recommended)</option>';
         
-        if (models[provider]) {
-            models[provider].forEach(model => {
-                const option = document.createElement('option');
-                option.value = model;
-                option.textContent = model;
-                modelSelect.appendChild(option);
-            });
+        // Hide API key for local/offline models
+        const isLocal = ['phi35', 'local-qwen3', 'local'].includes(provider);
+        apiKeyGroup.style.display = isLocal ? 'none' : 'block';
+        
+        // Add a text input option for custom model names
+        const customOption = document.createElement('option');
+        customOption.value = 'custom';
+        customOption.textContent = 'Custom Model Name...';
+        modelSelect.appendChild(customOption);
+        
+        // If API key is entered (or local provider selected), load available models dynamically
+        if (isLocal || apiKeyInput.value) {
+            modelSelect.innerHTML = '<option value="">Loading models...</option>';
+            
+            try {
+                const response = await fetch(`${this.apiBaseUrl}/list-models`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        provider: provider,
+                        api_key: apiKeyInput.value
+                    })
+                });
+                
+                const result = await response.json();
+                
+                modelSelect.innerHTML = '<option value="">Auto-select from API (Recommended)</option>';
+                modelSelect.appendChild(customOption);
+                
+                if (result.success && result.models && result.models.length > 0) {
+                    result.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model;
+                        option.textContent = model;
+                        if (model === result.first_model) {
+                            option.textContent += ' (Auto-selected)';
+                        }
+                        modelSelect.appendChild(option);
+                    });
+                } else {
+                    // Fallback to common suggestions if API fails
+                    const fallbackModels = this.getProviderFallbackModels();
+                    
+                    if (fallbackModels[provider]) {
+                        fallbackModels[provider].forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model + ' (Fallback)';
+                            modelSelect.appendChild(option);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load models:', error);
+                modelSelect.innerHTML = '<option value="">Auto-select from API (Recommended)</option>';
+                modelSelect.appendChild(customOption);
+                
+                // Fallback suggestions
+                const fallbackModels = this.getProviderFallbackModels();
+                
+                if (fallbackModels[provider]) {
+                    fallbackModels[provider].forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model;
+                        option.textContent = model + ' (Fallback)';
+                        modelSelect.appendChild(option);
+                    });
+                }
+            }
+        } else {
+            // Show fallback suggestions if no API key yet
+            const fallbackModels = this.getProviderFallbackModels();
+            
+            if (fallbackModels[provider]) {
+                fallbackModels[provider].forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model + ' (Enter API key to load all)';
+                    modelSelect.appendChild(option);
+                });
+            }
         }
+        
+        // Handle custom model input
+        modelSelect.addEventListener('change', function handleCustomModel(e) {
+            if (e.target.value === 'custom') {
+                const customModel = prompt('Enter custom model name:');
+                if (customModel) {
+                    const option = document.createElement('option');
+                    option.value = customModel;
+                    option.textContent = customModel;
+                    option.selected = true;
+                    modelSelect.appendChild(option);
+                } else {
+                    e.target.value = '';
+                }
+            }
+            modelSelect.removeEventListener('change', handleCustomModel);
+        });
     }
 
     async saveConfiguration() {
         const provider = document.getElementById('providerSelect').value;
-        const apiKey = document.getElementById('apiKeyInput').value;
+        let apiKey = document.getElementById('apiKeyInput').value;
         const model = document.getElementById('modelSelect').value;
         const temperature = parseFloat(document.getElementById('tempSlider').value);
         
+        // Check if API key is masked (contains • or ... or looks like a placeholder)
+        const isMaskedKey = apiKey.includes('•') || apiKey.includes('...') || /^\*+$/.test(apiKey);
+        
+        // If masked, don't send the key - backend will use existing runtime config
+        if (isMaskedKey) {
+            apiKey = null;  // Signal to backend to keep existing key
+        }
+        
         try {
+            // Save to runtime config only (no .env file needed)
             const response = await fetch(`${this.apiBaseUrl}/config`, {
                 method: 'POST',
                 headers: {
@@ -695,27 +776,75 @@ class AGENTIC_RAG {
             });
             
             if (response.ok) {
-                this.addMessage('Configuration saved successfully! Restarting server...', 'assistant');
+                // Close modal immediately - don't wait for API test
                 this.hideConfigModal();
-                
-                // Restart server after 2 seconds
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
+                this.addMessage(`✅ Configuration saved for ${provider}.`, 'assistant');
+
+                // Test API connection in background (non-blocking)
+                this.testApiInBackground(provider, apiKey, model);
             } else {
-                this.addMessage('Failed to save configuration', 'assistant');
+                this.updateApiStatusBadge(false, 'API Inactive');
+                this.addMessage('❌ Failed to save configuration.', 'assistant');
             }
         } catch (error) {
             console.error('Save config error:', error);
-            this.addMessage('Error saving configuration', 'assistant');
+            this.updateApiStatusBadge(false, 'API Inactive');
+            this.addMessage('❌ Error saving configuration.', 'assistant');
+        }
+    }
+
+    async testApiInBackground(provider, apiKey, model) {
+        // Test API in background without blocking UI
+        try {
+            // If apiKey is null, fetch existing config first
+            let testKey = apiKey;
+            if (!testKey) {
+                try {
+                    const configResponse = await fetch(`${this.apiBaseUrl}/config`);
+                    const config = await configResponse.json();
+                    if (config.has_api_key) {
+                        // Key exists but is masked, backend will use it
+                        testKey = 'existing';  // Signal that backend should use existing
+                    }
+                } catch (e) {
+                    console.log('Could not fetch existing config for test');
+                }
+            }
+            
+            const testResponse = await fetch(`${this.apiBaseUrl}/test-api`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    provider,
+                    api_key: testKey,
+                    model
+                })
+            });
+            const testResult = await testResponse.json();
+
+            await this.refreshConfigStatus();
+
+            if (testResult.success) {
+                this.updateApiStatusBadge(true, 'API Active');
+                this.addMessage(`✅ ${provider} API is now active.`, 'assistant');
+            } else {
+                this.updateApiStatusBadge(false, 'API Inactive');
+                const reason = testResult.error || 'Connection test failed';
+                this.addMessage(`⚠️ Configuration saved but API test failed: ${reason}`, 'assistant');
+            }
+        } catch (error) {
+            console.error('Background API test error:', error);
         }
     }
 
     async testConfiguration() {
         const provider = document.getElementById('providerSelect').value;
         const apiKey = document.getElementById('apiKeyInput').value;
+        const model = document.getElementById('modelSelect').value;
         
-        if (!apiKey) {
+        if (!apiKey && provider !== 'local') {
             this.addMessage('Please enter an API key first', 'assistant');
             return;
         }
@@ -731,33 +860,193 @@ class AGENTIC_RAG {
                 },
                 body: JSON.stringify({
                     provider,
-                    api_key: apiKey
+                    api_key: apiKey,
+                    model: model
                 })
             });
             
             const result = await response.json();
+            await this.refreshConfigStatus();
             
             if (result.success) {
                 this.addMessage(`✅ ${provider} API connection successful!`, 'assistant');
             } else {
-                this.addMessage(`❌ ${provider} API connection failed: ${result.error}`, 'assistant');
+                // Show error in red color based on error type
+                let errorMessage = `❌ ${provider} API connection failed: ${result.error}`;
+                if (result.error_type === 'quota_exceeded') {
+                    errorMessage = `<span style="color: #ff4444; font-weight: bold;">❌ QUOTA EXCEEDED: ${result.error}</span>`;
+                } else if (result.error_type === 'connection_error') {
+                    errorMessage = `<span style="color: #ff4444; font-weight: bold;">❌ CONNECTION ERROR: ${result.error}</span>`;
+                } else if (result.error_type === 'model_not_found') {
+                    errorMessage = `<span style="color: #ff6b6b; font-weight: bold;">❌ MODEL NOT FOUND: ${result.error}</span>`;
+                } else if (result.error_type === 'invalid_api_key') {
+                    errorMessage = `<span style="color: #ff6b6b; font-weight: bold;">❌ INVALID API KEY: ${result.error}</span>`;
+                }
+                this.addMessage(errorMessage, 'assistant');
             }
         } catch (error) {
             console.error('Test config error:', error);
-            this.addMessage('Error testing API connection', 'assistant');
+            this.addMessage(`<span style="color: #ff4444; font-weight: bold;">❌ Error testing API connection</span>`, 'assistant');
         }
     }
 
     toggleApiKeyVisibility() {
         const apiKeyInput = document.getElementById('apiKeyInput');
         const toggleBtn = document.getElementById('toggleKeyBtn');
-        
+
         if (apiKeyInput.type === 'password') {
             apiKeyInput.type = 'text';
             toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
         } else {
             apiKeyInput.type = 'password';
             toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
+        }
+    }
+
+    // Search Methods
+    showSearchModal() {
+        const modal = document.getElementById('searchModal');
+        const searchInput = document.getElementById('searchInput');
+        modal.style.display = 'block';
+        searchInput.focus();
+        this.searchMatches = [];
+        this.currentMatchIndex = -1;
+    }
+
+    hideSearchModal() {
+        const modal = document.getElementById('searchModal');
+        const searchInput = document.getElementById('searchInput');
+        modal.style.display = 'none';
+        searchInput.value = '';
+        this.clearSearchHighlights();
+        this.searchMatches = [];
+        this.currentMatchIndex = -1;
+    }
+
+    clearSearchHighlights() {
+        const highlights = document.querySelectorAll('.search-highlight, .search-highlight-current');
+        highlights.forEach(highlight => {
+            const parent = highlight.parentNode;
+            parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
+            parent.normalize();
+        });
+    }
+
+    performSearch(query) {
+        this.clearSearchHighlights();
+        this.searchMatches = [];
+        this.currentMatchIndex = -1;
+
+        const resultsInfo = document.getElementById('searchResultsInfo');
+
+        if (!query || query.trim() === '') {
+            resultsInfo.textContent = '';
+            return;
+        }
+
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageContents = messagesContainer.querySelectorAll('.message-content');
+
+        const searchRegex = new RegExp(this.escapeRegex(query), 'gi');
+
+        messageContents.forEach((contentDiv, messageIndex) => {
+            const walker = document.createTreeWalker(
+                contentDiv,
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+            );
+
+            const textNodes = [];
+            let node;
+            while (node = walker.nextNode()) {
+                if (node.nodeValue.match(searchRegex)) {
+                    textNodes.push(node);
+                }
+            }
+
+            textNodes.forEach(textNode => {
+                const text = textNode.nodeValue;
+                const matches = [...text.matchAll(searchRegex)];
+
+                if (matches.length > 0) {
+                    const fragment = document.createDocumentFragment();
+                    let lastIndex = 0;
+
+                    matches.forEach((match, matchIndex) => {
+                        // Add text before match
+                        if (match.index > lastIndex) {
+                            fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                        }
+
+                        // Create highlighted span
+                        const highlight = document.createElement('span');
+                        highlight.className = 'search-highlight';
+                        highlight.textContent = match[0];
+                        fragment.appendChild(highlight);
+
+                        // Store match reference
+                        this.searchMatches.push({
+                            element: highlight,
+                            messageIndex: messageIndex
+                        });
+
+                        lastIndex = match.index + match[0].length;
+                    });
+
+                    // Add remaining text
+                    if (lastIndex < text.length) {
+                        fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                    }
+
+                    textNode.parentNode.replaceChild(fragment, textNode);
+                }
+            });
+        });
+
+        if (this.searchMatches.length > 0) {
+            resultsInfo.textContent = `${this.searchMatches.length} match${this.searchMatches.length !== 1 ? 'es' : ''} found. Press Enter to navigate.`;
+            this.currentMatchIndex = 0;
+            this.highlightCurrentMatch();
+            this.scrollToCurrentMatch();
+        } else {
+            resultsInfo.textContent = 'No matches found';
+        }
+    }
+
+    escapeRegex(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    handleSearchKeydown(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (this.searchMatches.length > 0) {
+                this.currentMatchIndex = (this.currentMatchIndex + 1) % this.searchMatches.length;
+                this.highlightCurrentMatch();
+                this.scrollToCurrentMatch();
+            }
+        } else if (e.key === 'Escape') {
+            this.hideSearchModal();
+        }
+    }
+
+    highlightCurrentMatch() {
+        // Remove current class from all highlights
+        document.querySelectorAll('.search-highlight-current').forEach(el => {
+            el.classList.remove('search-highlight-current');
+        });
+
+        // Add current class to current match
+        if (this.searchMatches[this.currentMatchIndex]) {
+            this.searchMatches[this.currentMatchIndex].element.classList.add('search-highlight-current');
+        }
+    }
+
+    scrollToCurrentMatch() {
+        if (this.searchMatches[this.currentMatchIndex]) {
+            const matchElement = this.searchMatches[this.currentMatchIndex].element;
+            matchElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }
 }
