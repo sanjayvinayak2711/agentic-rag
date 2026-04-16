@@ -4,7 +4,9 @@ class AGENTIC_RAG {
         this.attachEventListeners();
         this.isProcessing = false;
         this.typingTimeout = null;
-        this.apiBaseUrl = 'http://localhost:8000/api/v1';  // Local testing
+        this.apiBaseUrl = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000/api/v1'  // Local testing
+            : 'https://agentic-rag-production.up.railway.app/api/v1';  // Production
         this.hasDocument = false; // Track if user uploaded a document
         this.initializeApp();
     }
@@ -312,7 +314,7 @@ class AGENTIC_RAG {
         } catch (error) {
             console.error('Backend health check failed:', error);
             this.updateApiStatusBadge(false, 'API Inactive');
-            this.addMessage('⚠️ Backend connection failed. The app will run in demo mode. Please check if the backend server is running at https://agentic-rag.onrender.com', 'assistant');
+            this.addMessage('⚠️ Backend connection failed. The app will run in demo mode. Please check if the backend server is running at https://agentic-rag-production.up.railway.app', 'assistant');
         }
     }
 
