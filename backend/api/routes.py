@@ -736,7 +736,7 @@ async def list_available_models(request: Dict[str, Any]):
         if provider == "gemini":
             url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, timeout=10) as response:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as response:
                     if response.status == 200:
                         result = await response.json()
                         models = [m["name"].replace("models/", "") for m in result.get("models", []) if "generateContent" in m.get("supportedGenerationMethods", [])]
@@ -745,7 +745,7 @@ async def list_available_models(request: Dict[str, Any]):
             url = "https://api.openai.com/v1/models"
             headers = {"Authorization": f"Bearer {api_key}"}
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers, timeout=10) as response:
+                async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as response:
                     if response.status == 200:
                         result = await response.json()
                         models = [m["id"] for m in result.get("data", []) if m.get("id", "").startswith(("gpt-", "chatgpt-"))]
@@ -758,7 +758,7 @@ async def list_available_models(request: Dict[str, Any]):
             url = "https://api.groq.com/openai/v1/models"
             headers = {"Authorization": f"Bearer {api_key}"}
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers, timeout=10) as response:
+                async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as response:
                     if response.status == 200:
                         result = await response.json()
                         models = [m["id"] for m in result.get("data", [])]
@@ -933,7 +933,7 @@ async def test_api_connection(test_data: Dict[str, Any]):
             }
         
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=headers, json=data, timeout=10) as response:
+            async with session.post(url, headers=headers, json=data, timeout=aiohttp.ClientTimeout(total=30)) as response:
                 if response.status == 200:
                     return {
                         "success": True,
