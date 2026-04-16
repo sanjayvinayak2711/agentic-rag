@@ -25,44 +25,67 @@ RUNTIME_CONFIG_FILE = PROJECT_ROOT / "data" / "runtime_config.json"
 # Runtime configuration storage (replaces .env file)
 _runtime_config: Dict[str, Any] = {}
 
+# Session-only API keys (not persisted to file - cleared on restart)
+_session_api_keys: Dict[str, str] = {}
+
 def _load_runtime_config():
-    """Load runtime configuration from file"""
+    """Load runtime configuration from file - API keys are NOT loaded (session-only)"""
     global _runtime_config
     try:
         if RUNTIME_CONFIG_FILE.exists():
             with open(RUNTIME_CONFIG_FILE, 'r', encoding='utf-8') as f:
-                _runtime_config = json.load(f)
+                loaded = json.load(f)
+                # Filter out API keys - they are session-only, not persisted
+                _runtime_config = {k: v for k, v in loaded.items() if "API_KEY" not in k}
     except Exception as e:
         print(f"Warning: Could not load runtime config: {e}")
         _runtime_config = {}
 
 def _save_runtime_config():
-    """Save runtime configuration to file"""
+    """Save runtime configuration to file - API keys are NOT saved (session-only)"""
     try:
         RUNTIME_CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        # Filter out API keys - they are session-only, not persisted
+        save_data = {k: v for k, v in _runtime_config.items() if "API_KEY" not in k}
         with open(RUNTIME_CONFIG_FILE, 'w', encoding='utf-8') as f:
-            json.dump(_runtime_config, f, indent=2)
+            json.dump(save_data, f, indent=2)
     except Exception as e:
         print(f"Warning: Could not save runtime config: {e}")
 
 def set_runtime_config(key: str, value: Any):
     """Set runtime configuration value and save to file"""
-    _runtime_config[key] = value
-    _save_runtime_config()
+    # API keys are stored in memory only (session-only), not persisted
+    if "API_KEY" in key:
+        _session_api_keys[key] = value
+        logger.info(f"API key for {key} stored in session only (not persisted)")
+    else:
+        _runtime_config[key] = value
+        _save_runtime_config()
 
 def get_runtime_config(key: str, default: Any = None) -> Any:
-    """Get runtime configuration value"""
+    """Get runtime configuration value - checks session API keys first, then persisted config"""
+    # Check session-only API keys first
+    if "API_KEY" in key:
+        return _session_api_keys.get(key, default)
     return _runtime_config.get(key, default)
 
 def update_runtime_config(updates: Dict[str, Any]):
     """Update multiple runtime configuration values and save to file"""
-    _runtime_config.update(updates)
+    for key, value in updates.items():
+        if "API_KEY" in key:
+            # API keys are session-only (not persisted)
+            _session_api_keys[key] = value
+            logger.info(f"API key for {key} stored in session only (not persisted)")
+        else:
+            _runtime_config[key] = value
     _save_runtime_config()
 
 def clear_runtime_config():
-    """Clear all runtime configuration and remove file"""
-    global _runtime_config
+    """Clear all runtime configuration and remove file - also clears session API keys"""
+    global _runtime_config, _session_api_keys
     _runtime_config = {}
+    _session_api_keys = {}  # Clear all session API keys too
+    logger.info("Cleared all runtime config and session API keys")
     try:
         if RUNTIME_CONFIG_FILE.exists():
             RUNTIME_CONFIG_FILE.unlink()
