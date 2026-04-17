@@ -5,7 +5,7 @@ Embedding generation using Gemini API (lightweight, no heavy ML models)
 import asyncio
 from typing import List
 import numpy as np
-import google.generativeai as genai
+from google import genai
 from backend.utils.logger import setup_logger
 from backend.config import settings
 
@@ -16,25 +16,42 @@ def configure_gemini():
     """Configure Gemini with available API key"""
     api_keys = settings.get_api_keys("gemini")
     if api_keys:
-        genai.configure(api_key=api_keys[0])
-        return True
+        try:
+            genai.configure(api_key=api_keys[0])
+            return True
+        except Exception as e:
+            logger.error(f"Failed to configure Gemini: {e}")
+            return False
     return False
 
 # Initialize on module load (lazy - will retry if key not available yet)
 _gemini_configured = False
+_gemini_client = None
 
 def ensure_gemini_configured():
-    global _gemini_configured
+    global _gemini_configured, _gemini_client
     if not _gemini_configured:
-        _gemini_configured = configure_gemini()
+        api_keys = settings.get_api_keys("gemini")
+        if api_keys:
+            try:
+                _gemini_client = genai.Client(api_key=api_keys[0])
+                _gemini_configured = True
+            except Exception as e:
+                logger.error(f"Failed to initialize Gemini client: {e}")
     return _gemini_configured
+
+def get_gemini_client():
+    """Get the configured Gemini client"""
+    if ensure_gemini_configured():
+        return _gemini_client
+    return None
 
 
 class EmbeddingGenerator:
     """Generates embeddings using Gemini API (lightweight, cloud-based)"""
     
     def __init__(self):
-        self.model_name = "models/embedding-001"
+        self.model_name = "text-embedding-004"
         self._use_mock = not ensure_gemini_configured()
         if self._use_mock:
             logger.warning("No Gemini API key found - using mock embeddings for testing")
@@ -62,12 +79,21 @@ class EmbeddingGenerator:
             if self._use_mock:
                 return self._mock_embedding(text)
             
+            client = get_gemini_client()
+            if not client:
+                logger.warning("Gemini client not available, falling back to mock")
+                return self._mock_embedding(text)
+            
             loop = asyncio.get_event_loop()
-            embedding = await loop.run_in_executor(
+            result = await loop.run_in_executor(
                 None,
-                lambda: genai.embed_content(model=self.model_name, content=text)["embedding"]
+                lambda: client.models.embed_content(
+                    model=self.model_name,
+                    contents=[text]
+                )
             )
-            return embedding
+            embedding = result.embeddings[0].values
+            return list(embedding)
         except Exception as e:
             logger.error(f"Error generating embedding: {str(e)}, falling back to mock")
             return self._mock_embedding(text)

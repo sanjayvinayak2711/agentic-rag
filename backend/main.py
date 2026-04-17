@@ -29,6 +29,11 @@ from slowapi.util import get_remote_address
 # Import new secure settings
 from backend.core.settings import Settings
 from backend.core.security import add_security_headers, verify_api_key
+from backend.core.startup_check import validate_env, validate_dependencies
+
+# Validate startup requirements
+validate_env()
+validate_dependencies()
 
 # Import API routes
 from backend.api.routes import router
@@ -50,7 +55,7 @@ def get_allowed_origins():
             "https://agentic-rag.vercel.app",
         ]
     else:
-        # Development - include localhost
+        # Development - include localhost and production URLs
         return [
             "https://agentic-rag-gamma.vercel.app",
             "https://agentic-rag.vercel.app",
@@ -90,7 +95,7 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=origins,
         allow_methods=["GET", "POST", "PUT", "DELETE"],
-        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-API-Key"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-API-Key", "X-User-Api-Key"],
         allow_credentials=True,
         max_age=600,
     )
@@ -103,7 +108,7 @@ def create_app() -> FastAPI:
     async def limit_request_size(request: Request, call_next):
         content_length = int(request.headers.get("content-length", 0))
         if content_length > 10_000_000:  # 10 MB limit
-            return FastApiJSONResponse(
+            return JSONResponse(
                 status_code=413, 
                 content={"error": "Request too large", "detail": "Maximum request size is 10MB"}
             )
@@ -113,7 +118,7 @@ def create_app() -> FastAPI:
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
         logger.exception("Unhandled error occurred")
-        return FastApiJSONResponse(
+        return JSONResponse(
             status_code=500,
             content={"error": "Internal server error", "detail": "An unexpected error occurred"},
         )
