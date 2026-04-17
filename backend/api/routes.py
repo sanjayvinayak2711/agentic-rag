@@ -1081,17 +1081,14 @@ async def get_config_status():
     """Get current provider status with health indication for UI badges."""
     try:
         from backend.config import get_runtime_config
-
         provider = (get_runtime_config("AI_PROVIDER") or settings.AI_PROVIDER or "gemini").lower()
         model = get_runtime_config(f"{provider.upper()}_MODEL") or getattr(settings, f"{provider.upper()}_MODEL", "")
         api_key = get_runtime_config(f"{provider.upper()}_API_KEY", "")
-
         test_result = await test_api_connection({
             "provider": provider,
             "api_key": api_key,
             "model": model
         })
-
         return {
             "provider": provider,
             "model": model,
