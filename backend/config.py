@@ -9,12 +9,15 @@ import logging
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 from pydantic_settings import BaseSettings
+from pydantic import validator
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
-# Load environment variables from .env file (local development)
-load_dotenv()
+# Load environment variables from .env file ONLY for local development
+# Skip in production (Railway sets env vars directly)
+if os.environ.get("ENV") != "production":
+    load_dotenv()
 
 # Get project root directory
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -183,8 +186,20 @@ class Settings(BaseSettings):
     MAX_ITERATIONS: int = 3
     TIMEOUT_SECONDS: int = 30
     
-    # Security
-    SECRET_KEY: str = "your-secret-key-change-in-production"
+    # Security - SECRET_KEY from environment only (no hardcoded default)
+    SECRET_KEY: str = os.environ.get("SECRET_KEY", "")
+    
+    # Validate SECRET_KEY is set
+    @validator("SECRET_KEY")
+    def validate_secret_key(cls, v):
+        if not v or len(v) < 32:
+            # Generate a warning but don't crash - use random key as fallback
+            import secrets
+            fallback = secrets.token_hex(32)
+            print(f"WARNING: SECRET_KEY not set or too short. Using temporary random key.")
+            print(f"Set a strong SECRET_KEY in Railway environment variables for production.")
+            return fallback
+        return v
     
     # Logging settings
     LOG_LEVEL: str = "INFO"
