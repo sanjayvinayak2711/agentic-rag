@@ -1,4 +1,4 @@
-# Agentic-RAG: Self-Correcting RAG System
+                                                               # Agentic-RAG
 
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![Live Demo](https://img.shields.io/badge/demo-live-green)
