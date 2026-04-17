@@ -33,6 +33,14 @@ import json
 logger = setup_logger(__name__)
 router = APIRouter(tags=["api"])
 
+# SECURITY: Check if debug endpoints should be enabled
+def is_debug_enabled():
+    """Debug endpoints only enabled in non-production environments"""
+    return os.environ.get("ENV") != "production" and os.environ.get("DEBUG_ENDPOINTS") == "true"
+
+# Generic error message to prevent information disclosure
+SAFE_ERROR_MESSAGE = "An internal error occurred"
+
 # Rate limiter setup
 limiter = Limiter(key_func=get_remote_address)
 
@@ -194,7 +202,8 @@ async def query_documents(
         
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # SECURITY: Don't expose internal error details
+        raise HTTPException(status_code=500, detail=SAFE_ERROR_MESSAGE)
 
 
 @router.post("/upload", response_model=DocumentUploadResponse, dependencies=[Depends(verify_api_key)])
@@ -342,7 +351,8 @@ async def upload_document(request: Request, file: UploadFile = File(...)):
         if 'file_path' in locals() and os.path.exists(file_path):
             os.remove(file_path)
         
-        raise HTTPException(status_code=500, detail=str(e))
+        # SECURITY: Don't expose internal error details
+        raise HTTPException(status_code=500, detail=SAFE_ERROR_MESSAGE)
 
 
 @router.get("/documents", response_model=List[DocumentInfo])
@@ -356,7 +366,8 @@ async def list_documents():
         
     except Exception as e:
         logger.error(f"Error listing documents: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # SECURITY: Don't expose internal error details
+        raise HTTPException(status_code=500, detail=SAFE_ERROR_MESSAGE)
 
 
 @router.delete("/documents/{document_id}")
@@ -377,7 +388,8 @@ async def delete_document(document_id: str):
         
     except Exception as e:
         logger.error(f"Error deleting document: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # SECURITY: Don't expose internal error details
+        raise HTTPException(status_code=500, detail=SAFE_ERROR_MESSAGE)
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -392,10 +404,11 @@ async def health_check():
         )
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
+        # SECURITY: Don't expose internal error details
         return HealthResponse(
             status="unhealthy",
             version="1.0.0",
-            components={"error": str(e)}
+            components={"error": "Health check failed"}
         )
 
 
@@ -436,12 +449,17 @@ async def get_system_stats():
         
     except Exception as e:
         logger.error(f"Error getting stats: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # SECURITY: Don't expose internal error details
+        raise HTTPException(status_code=500, detail=SAFE_ERROR_MESSAGE)
 
 
 @router.get("/test-retrieval")
 async def test_retrieval():
-    """Debug route to test retrieval pipeline"""
+    """Debug route to test retrieval pipeline - DISABLED in production"""
+    # SECURITY: Only allow debug endpoints in non-production environments
+    if not is_debug_enabled():
+        raise HTTPException(status_code=404, detail="Endpoint not found")
+    
     try:
         from backend.agents.retrieval_agent import RetrievalAgent
         
@@ -465,15 +483,20 @@ async def test_retrieval():
         }
     except Exception as e:
         logger.error(f"Debug retrieval test failed: {str(e)}")
+        # SECURITY: Don't expose internal error details
         return {
             "status": "error",
-            "message": str(e)
+            "message": SAFE_ERROR_MESSAGE
         }
 
 
 @router.post("/test")
 async def test_ai_connection():
-    """Test AI connection with current configuration"""
+    """Test AI connection with current configuration - DISABLED in production"""
+    # SECURITY: Only allow debug endpoints in non-production environments
+    if not is_debug_enabled():
+        raise HTTPException(status_code=404, detail="Endpoint not found")
+    
     try:
         from backend.core.llm import LLMClient
         
@@ -493,10 +516,10 @@ async def test_ai_connection():
         
     except Exception as e:
         logger.error(f"Error testing AI connection: {str(e)}")
+        # SECURITY: Don't expose internal error details
         return {
             "status": "error",
-            "error": str(e),
-            "message": "AI connection test failed"
+            "message": SAFE_ERROR_MESSAGE
         }
 
 
@@ -518,7 +541,8 @@ async def clear_all_data():
         
     except Exception as e:
         logger.error(f"Error clearing data: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # SECURITY: Don't expose internal error details to client
+        raise HTTPException(status_code=500, detail=SAFE_ERROR_MESSAGE)
 
 
 @router.get("/evaluation/status")
@@ -535,7 +559,8 @@ async def get_evaluation_status():
         }
     except Exception as e:
         logger.error(f"Error getting evaluation status: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # SECURITY: Don't expose internal error details
+        raise HTTPException(status_code=500, detail=SAFE_ERROR_MESSAGE)
 
 
 @router.post("/evaluation/run")
@@ -568,7 +593,8 @@ async def run_evaluation(sample_size: int = 5):
                 results.append(result)
             except Exception as e:
                 logger.error(f"Error evaluating {qa['id']}: {str(e)}")
-                results.append({"qa_id": qa["id"], "error": str(e), "passed": False})
+                # SECURITY: Don't expose internal error details
+                results.append({"qa_id": qa["id"], "error": SAFE_ERROR_MESSAGE, "passed": False})
         
         # Calculate summary
         passed = sum(1 for r in results if r.get("passed", False))
@@ -584,7 +610,8 @@ async def run_evaluation(sample_size: int = 5):
         
     except Exception as e:
         logger.error(f"Error running evaluation: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # SECURITY: Don't expose internal error details
+        raise HTTPException(status_code=500, detail=SAFE_ERROR_MESSAGE)
 
 
 @router.post("/analyze")
@@ -647,7 +674,8 @@ async def analyze_resume(request: QueryRequest):
         
     except Exception as e:
         logger.error(f"Error analyzing resume: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # SECURITY: Don't expose internal error details
+        raise HTTPException(status_code=500, detail=SAFE_ERROR_MESSAGE)
 
 # Configuration Management Endpoints
 @router.get("/config")
@@ -674,7 +702,8 @@ async def get_config():
         }
     except Exception as e:
         logger.error(f"Error getting config: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # SECURITY: Don't expose internal error details
+        raise HTTPException(status_code=500, detail=SAFE_ERROR_MESSAGE)
 
 @router.post("/config")
 async def update_config(config_data: Dict[str, Any]):
@@ -750,7 +779,8 @@ async def update_config(config_data: Dict[str, Any]):
         
     except Exception as e:
         logger.error(f"Error updating config: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # SECURITY: Don't expose internal error details
+        raise HTTPException(status_code=500, detail=SAFE_ERROR_MESSAGE)
 
 @router.post("/clear-config")
 async def clear_runtime_config_endpoint():
@@ -764,7 +794,8 @@ async def clear_runtime_config_endpoint():
         }
     except Exception as e:
         logger.error(f"Error clearing config: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # SECURITY: Don't expose internal error details
+        raise HTTPException(status_code=500, detail=SAFE_ERROR_MESSAGE)
 
 @router.post("/list-models")
 async def list_available_models(request: Dict[str, Any]):
@@ -847,13 +878,19 @@ async def list_available_models(request: Dict[str, Any]):
         
     except Exception as e:
         logger.error(f"Error listing models: {str(e)}")
+        # SECURITY: Don't expose internal error details
         return {
             "success": False,
-            "error": str(e)
+            "error": SAFE_ERROR_MESSAGE
         }
 
 @router.post("/test-api")
 async def test_api_connection(test_data: Dict[str, Any]):
+    """Test API connection - DISABLED in production"""
+    # SECURITY: Only allow debug endpoints in non-production environments
+    if not is_debug_enabled():
+        raise HTTPException(status_code=404, detail="Endpoint not found")
+    
     try:
         from backend.config import get_runtime_config
 
@@ -891,9 +928,11 @@ async def test_api_connection(test_data: Dict[str, Any]):
                         payload = await response.json()
                         models = [m.get("name", "") for m in payload.get("models", [])]
             except Exception as e:
+                logger.error(f"Cannot connect to local Ollama: {str(e)}")
+                # SECURITY: Don't expose internal URL or error details
                 return {
                     "success": False,
-                    "error": f"Cannot connect to local Ollama at {settings.LOCAL_LLM_URL}: {str(e)}",
+                    "error": "Cannot connect to local Ollama service",
                     "error_type": "local_unreachable"
                 }
             return {
@@ -1078,9 +1117,10 @@ async def test_api_connection(test_data: Dict[str, Any]):
         }
     except Exception as e:
         logger.error(f"Error testing API: {str(e)}")
+        # SECURITY: Don't expose internal error details
         return {
             "success": False,
-            "error": str(e),
+            "error": SAFE_ERROR_MESSAGE,
             "error_type": "unknown_error"
         }
 
@@ -1107,11 +1147,12 @@ async def get_config_status():
         }
     except Exception as e:
         logger.error(f"Error getting config status: {str(e)}")
+        # SECURITY: Don't expose internal error details
         return {
             "provider": "unknown",
             "model": "",
             "active": False,
             "status_text": "API Inactive",
-            "details": str(e),
+            "details": SAFE_ERROR_MESSAGE,
             "error_type": "status_error"
         }

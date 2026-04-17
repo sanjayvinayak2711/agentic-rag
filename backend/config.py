@@ -41,7 +41,7 @@ def _load_runtime_config():
                 # Filter out API keys - they are session-only, not persisted
                 _runtime_config = {k: v for k, v in loaded.items() if "API_KEY" not in k}
     except Exception as e:
-        print(f"Warning: Could not load runtime config: {e}")
+        logger.warning(f"Could not load runtime config: {e}")
         _runtime_config = {}
 
 def _save_runtime_config():
@@ -53,7 +53,7 @@ def _save_runtime_config():
         with open(RUNTIME_CONFIG_FILE, 'w', encoding='utf-8') as f:
             json.dump(save_data, f, indent=2)
     except Exception as e:
-        print(f"Warning: Could not save runtime config: {e}")
+        logger.warning(f"Could not save runtime config: {e}")
 
 def set_runtime_config(key: str, value: Any):
     """Set runtime configuration value and save to file"""
@@ -93,7 +93,7 @@ def clear_runtime_config():
         if RUNTIME_CONFIG_FILE.exists():
             RUNTIME_CONFIG_FILE.unlink()
     except Exception as e:
-        print(f"Warning: Could not remove runtime config file: {e}")
+        logger.warning(f"Could not remove runtime config file: {e}")
 
 # Load existing runtime config on module import
 _load_runtime_config()
@@ -196,8 +196,8 @@ class Settings(BaseSettings):
             # Generate a warning but don't crash - use random key as fallback
             import secrets
             fallback = secrets.token_hex(32)
-            print(f"WARNING: SECRET_KEY not set or too short. Using temporary random key.")
-            print(f"Set a strong SECRET_KEY in Railway environment variables for production.")
+            logger.warning("SECRET_KEY not set or too short. Using temporary random key.")
+            logger.warning("Set a strong SECRET_KEY in Railway environment variables for production.")
             return fallback
         return v
     
@@ -272,7 +272,7 @@ class Settings(BaseSettings):
             available = self.get_available_providers()
             if available:
                 new_provider = available[0]  # Use first available
-                print(f"Auto-switching from {provider} to {new_provider} (no API key found)")
+                logger.info(f"Auto-switching from {provider} to {new_provider} (no API key found)")
                 provider = new_provider
                 api_key = self.get_random_api_key(provider)
         
