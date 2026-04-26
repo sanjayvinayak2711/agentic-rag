@@ -2,6 +2,11 @@
 
 > **A self-correcting RAG system that evaluates and rewrites its own answers before returning them.**
 
+**TL;DR:**
+- Self-correcting RAG with critic evaluation loop
+- Multi-LLM fallback orchestration (7+ providers)
+- Evaluation-driven response refinement with bounded retries
+
 A production-style agentic RAG system that improves LLM outputs using retrieval + evaluation + controlled retry loops. Every answer goes through **Generate → Evaluate → Refine → Finalize** before reaching the user.
 
 ![Aetherion UI](docs/images/ui.png)
@@ -26,6 +31,37 @@ backend/agents/
 └── orchestrator       → controls full pipeline
 ```
 
+### 🔄 Execution Trace
+```
+Query: "What is attention mechanism?"
+   ↓
+┌─────────────┐    Planner: "analyze" intent detected
+│   PLANNER   │ →  Strategy: technical deep-dive
+└──────┬──────┘
+   ↓
+┌─────────────┐    Retriever: fetching 5 relevant chunks
+│  RETRIEVER  │ →  Found: "attention-is-all-you-need.pdf"
+└──────┬──────┘
+   ↓
+┌─────────────┐    LLM: generating response
+│     LLM     │ →  Score: 6.5/10 ❌ (too shallow)
+└──────┬──────┘
+   ↓
+┌─────────────┐    Critic: "missing technical depth, no citations"
+│   CRITIC    │ →  Action: trigger retry
+└──────┬──────┘
+   ↓
+┌─────────────┐    Retry Agent: prompting "add QKV details + citations"
+│    RETRY    │ →  Feedback sent to LLM
+└──────┬──────┘
+   ↓
+┌─────────────┐    LLM: regenerating with depth
+│     LLM     │ →  Score: 8.7/10 ✅
+└──────┬──────┘
+   ↓
+Final Answer: "Self-attention computes Query, Key, Value matrices..."
+```
+
 ---
 
 ## ✨ Key Features
@@ -38,7 +74,20 @@ backend/agents/
 
 ---
 
-## � Live Demo
+## 🚀 Why not just LangChain?
+
+| LangChain Agents | Aetherion |
+|------------------|-----------|
+| Tool-calling loop | Structured evaluation as **first-class pipeline stage** |
+| Unlimited retries | **Bounded retry control** (max 3 iterations) |
+| Post-hoc filtering | **Scoring-based acceptance** (must pass 7/10 threshold) |
+| Black-box execution | **Full execution trace** with intermediate scores |
+
+Unlike standard LangChain agents, Aetherion introduces structured evaluation as a first-class pipeline stage with bounded retry control and scoring-based acceptance.
+
+---
+
+## 📸 Live Demo
 
 **Try it:** https://agentic-rag-gamma.vercel.app
 
@@ -58,7 +107,7 @@ backend/agents/
 
 ---
 
-## �📊 Results (Controlled Eval)
+## 📊 Results (Controlled Eval)
 
 Evaluation on 50 QA pairs from arXiv research papers using GPT-4 as judge.
 
