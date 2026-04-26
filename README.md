@@ -7,6 +7,8 @@
 
 > 🧠 **What this system does:** An AI system that improves LLM answers using self-evaluation + retry loops, reducing hallucinations by 25%.
 
+A self-improving RAG system with evaluation-driven retry loops and multi-LLM routing.
+
 Built a production-deployed agentic RAG system that autonomously plans, evaluates, and refines responses using multi-LLM orchestration.
 
 **Key Results:**
@@ -14,7 +16,7 @@ Built a production-deployed agentic RAG system that autonomously plans, evaluate
 - ↓ 25% hallucination rate using evaluation loops
 - Supports 7+ LLM providers with dynamic fallback
 - Real-time execution trace + quality scoring
-- ~1.2s average pipeline latency (with evaluation loop)
+- ~1.2s average pipeline latency (vs ~0.8s standard RAG)
 - Handles concurrent requests via async FastAPI execution
 
 👉 Independently designed and implemented end-to-end system (architecture, backend, orchestration, evaluation)
@@ -190,11 +192,9 @@ python start.py
 
 ## ⚡ Why Engineers Care
 
-- Demonstrates production-grade agentic AI (not just RAG)
-- Shows system design: orchestration, evaluation, and tradeoffs
-- Built with scalability, observability, and reliability in mind
-
-Built for real-world AI systems, not demos.
+- Production-grade agentic AI with observable orchestration
+- System design: evaluation loops, tradeoffs, failure handling
+- Built for scalability, reliability, and real-world deployment
 
 ---
 
