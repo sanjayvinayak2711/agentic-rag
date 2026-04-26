@@ -5,6 +5,8 @@
 ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
+> 🧠 **What this system does:** An AI system that improves LLM answers using self-evaluation + retry loops, reducing hallucinations by 25%.
+
 Built a production-deployed agentic RAG system that autonomously plans, evaluates, and refines responses using multi-LLM orchestration.
 
 **Key Results:**
@@ -71,7 +73,9 @@ backend/agents/
 | Proof Item | Details |
 |------------|---------|
 | **Dataset** | 50 QA pairs from arXiv papers ([`data/qa_pairs.json`](data/qa_pairs.json)) |
-| **Judge** | GPT-4 with structured rubric (relevance, grounding, completeness) |
+| **Sample Prompts** | See [`docs/sample_prompts.md`](docs/sample_prompts.md) for 10 example queries |
+| **Judge** | GPT-4 with structured rubric ([`docs/evaluation_rubric.md`](docs/evaluation_rubric.md)) |
+| **Raw Outputs** | Evaluation logs in [`logs/evaluation/`](logs/evaluation/) |
 | **Reproducibility** | `python scripts/evaluate.py --dataset data/qa_pairs.json` |
 | **Ablation Study** | Critic agent adds +0.7 score, evaluation loop improves consistency +23% |
 
@@ -191,6 +195,17 @@ python start.py
 - Built with scalability, observability, and reliability in mind
 
 Built for real-world AI systems, not demos.
+
+---
+
+## ❌ Known Limitations
+
+| Limitation | Impact | Mitigation |
+|------------|--------|------------|
+| **Increased latency** | ~1.2s avg (vs ~0.8s baseline) due to critic loop | Async execution, model routing |
+| **Judge LLM dependency** | Evaluation quality tied to GPT-4 capabilities | Structured rubric, multi-criteria scoring |
+| **Small dataset** | 50 QA pairs (research papers only) | Ablation studies, cross-validation |
+| **Cost overhead** | Multiple LLM calls per query | BYOK model, caching layer ready |
 
 ---
 
